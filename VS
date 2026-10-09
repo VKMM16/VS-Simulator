@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="de"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>V40 Emulator</title>
+<style>
+:root{--bg:#f2f4f7;--card:#fff;--tx:#1b2430;--mut:#6b7686;--bd:#b9c3d0;--acc:#2f6fed;--red:#e5222b;--blue:#10a0e8;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12161c;--card:#1c232c;--tx:#e8edf3;--mut:#9aa6b5;--bd:#44505f}}
+:root[data-theme="dark"]{--bg:#12161c;--card:#1c232c;--tx:#e8edf3;--mut:#9aa6b5;--bd:#44505f}
+*{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:2000px;margin:0 auto;padding:0 8px 6px}
+.panel{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;margin:0 -8px 6px;background:var(--card);border-bottom:2px solid var(--bd);padding:6px 12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.panel b{font-size:17px;min-width:210px}
+.panel .sp{font-size:14px;color:var(--mut)}
+input{width:100px;height:50px;font-size:24px;text-align:center;border:2px solid var(--bd);border-radius:10px;background:var(--card);color:var(--tx)}
+.panel button{height:50px;min-width:50px;padding:0 14px;font-size:20px;border-radius:10px;border:2px solid var(--bd);background:var(--card);color:var(--tx)}
+svg{width:100%;height:auto;max-height:calc(100vh - 78px);display:block;touch-action:manipulation;background:var(--card);border:2px solid var(--bd);border-radius:14px}
+svg text{fill:var(--tx);font-family:Arial,Helvetica,sans-serif}
+.t{pointer-events:none}
+.c,.fl,.seg{cursor:pointer}
+.bx{fill:var(--card);stroke-width:5}
+.r .bx{stroke:var(--red)}.b .bx{stroke:var(--blue)}
+.c.sel .bx{fill:rgba(47,111,237,.18);stroke:var(--acc);stroke-width:8}
+.set{fill:rgba(120,130,145,.06);stroke:none;cursor:pointer}
+.set.on{fill:rgba(47,111,237,.10);stroke:var(--acc);stroke-width:4;stroke-dasharray:10 6}
+</style></head><body><main>
+<div class="panel"><b id="pn">Kästchen oder Kreis antippen</b><input id="in" type="text" inputmode="decimal" autocomplete="off" disabled><span id="ch"></span><button id="rs" type="button">Zurücksetzen</button><span class="sp" id="sp"></span></div>
+<svg id="s" viewBox="0 0 2160 1100" role="img" aria-label="V40 Verstärker"></svg>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const SOLL_RX=60,SOLL_TX=105;
+const DEF={uhf:60,vhf:58,tx:100,vd:12,md:14};
+let S={...DEF};
+// b=[x,y,w,h]  ic=[Symbol,x,y]  rg=[Text,x,y,Anker]  out=[[Text,x,y,Anker]...] (Namen ausserhalb bei Schaltern)
+const comps=[
+ {id:'a',c:'r',t:'pad',n:'Pad',max:20,v:0,b:[104,562,86,152],ic:['I',63,590],rg:['0-20',57,650,'middle']},
+ {id:'is',c:'r',t:'pad',n:'Interstage',tag:'VHF',max:20,v:0,b:[105,261,86,152],ic:['f',68,287],rg:['0-20',60,336,'middle']},
+ {id:'eq',c:'r',t:'pad',n:'Equalizer',tag:'UHF',max:10,v:0,b:[134,118,157,74],ic:['X',260,225],rg:['0-10',261,267,'middle']},
+ {id:'g',c:'r',t:'sw',n:'Verstärkung',opts:[32,41],v:32,b:[525,112,70,132],o:'v',ic:['I',557,278],rg:['32-41',557,323,'middle'],out:[['Verstärkung',557,348,'middle']]},
+ {id:'p',c:'r',t:'pad',n:'Pad',max:7,v:0,b:[736,113,70,131],ic:['I',771,278],rg:['0-7',771,327,'middle']},
+ {id:'f',c:'r',t:'sw',n:'Interstage',opts:[0,7,10],v:0,b:[907,118,158,74],o:'h',ic:['X',934,226],rg:['0/7/10',1010,232,'middle'],out:[['Interstage · VHF',1010,268,'middle']]},
+ {id:'t1',c:'b',t:'pad',n:'Pad',max:20,v:0,b:[366,825,71,135],ic:['I',405,790],rg:['0-20',395,986,'middle']},
+ {id:'t2',c:'b',t:'pad',n:'Pad',max:12,v:0,b:[507,825,79,133],ic:['X',547,993],rg:['0-12',553,1042,'middle']},
+ {id:'tg',c:'b',t:'sw',n:'Dämpfung',opts:[22,33],v:22,b:[532,514,71,134],o:'v',ic:['I',434,586],rg:['22-33',495,577,'middle'],out:[['Dämpfung',470,640,'middle']]},
+ {id:'t4',c:'b',t:'pad',n:'Pad',max:20,v:0,b:[786,410,152,86],ic:['I',847,538],rg:['0-20',841,582,'middle']}];
+const comp=id=>comps.find(c=>c.id===id),V=id=>comp(id).v;
+// Kreise: cx,cy,r ; k: u/v/t = Pegel, d = dB-Wert
+const flds=[
+ {id:'eu',nd:'ein',k:'u',c:'r',tx:'UHF',g:'L',p:[100,1285,54],ed:{n:'Eingang UHF (dBµV)',key:'uhf',max:130}},
+ {id:'ev',nd:'ein',k:'v',c:'r',tx:'VHF',g:'L',p:[240,1285,54],ed:{n:'Eingang VHF (dBµV)',key:'vhf',max:130}},
+ {id:'et',nd:'ein',k:'t',c:'b',tx:'TX',g:'L',p:[380,1285,54],ed:{n:'Eingang TX (dBµV)',key:'tx',max:130}},
+ {id:'au',nd:'aus',k:'u',c:'r',tx:'UHF',g:'L',p:[1010,1285,54]},
+ {id:'av',nd:'aus',k:'v',c:'r',tx:'VHF',g:'L',p:[1150,1285,54]},
+ {id:'at',nd:'aus',k:'t',c:'b',tx:'TX',g:'L',p:[1290,1285,54]},
+ {id:'vt',nd:'ver',k:'d',c:'k',tx:'Verteiler',g:'R',p:[1260,930,60],ed:{n:'Verteiler (dB)',key:'vd',max:60}},
+ {id:'mm',nd:'mmd',k:'d',c:'k',tx:'MMD',g:'R',p:[1450,930,60],ed:{n:'MMD (dB)',key:'md',max:60}},
+ {id:'mu',nd:'mmd',k:'u',c:'r',tx:'UHF',g:'R',p:[1690,930,58]},
+ {id:'mv',nd:'mmd',k:'v',c:'r',tx:'VHF',g:'R',p:[1840,930,58]},
+ {id:'mt',nd:'mmd',k:'t',c:'b',tx:'TX',g:'R',p:[1990,930,58]}];
+const NAME={ein:'Eingang',aus:'Ausgang',ver:'Verteiler',mmd:'MMD'};
+const SETS={ein:[28,1170,430,205],aus:[940,1170,420,205]};
+let node='aus',selT=null,selId=null;
+const f1=n=>(Math.round(n*10)/10).toFixed(1).replace('.',',');
+const fs=n=>(n>0?'+':'')+f1(n).replace('-','−');
+const short=n=>f1(n).replace(/,0$/,'');
+function noise(i){const x=Math.sin(i*12.9898)*43758.5453;return(x-Math.floor(x)-.5)*.7;}
+function shape(t){const i=Math.round(t*100);return t<.5?2-4*(t/.5)+noise(i):-1.5+3*((t-.5)/.5)+noise(i);}
+// ---- Rechnung ----
+function rxBand(nd,band){
+ const u=band==='u',b=u?S.uhf:S.vhf;
+ if(nd==='ein')return b;
+ const aus=b+V('g')-V('a')-V('p')-(u?V('eq'):V('is')+V('f'));
+ return nd==='aus'?aus:nd==='ver'?aus-S.vd:aus-S.vd-S.md;
+}
+const rxLevel=(nd,t)=>rxBand(nd,t<.5?'v':'u')+shape(t);
+function txLevel(nd){
+ if(nd==='ein')return S.tx;
+ const aus=S.tx-V('tg')+V('t1')+V('t2')+V('t4');
+ return nd==='aus'?aus:nd==='ver'?aus+S.vd:aus+S.vd+S.md;
+}
+// ---- Symbole ----
+function icon(k,cx,cy){
+ let g=`<g class="t" transform="translate(${cx-24},${cy-25})"><rect width="48" height="50" rx="4" fill="#ececef" stroke="#c4c4ca" stroke-width="2"/><g stroke="#3a3a40" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round">`;
+ if(k==='I')g+=`<path d="M17 11H31M17 39H31M24 11V39"/><path d="M13 37L36 13M30 13H36V19"/>`;
+ else if(k==='X')g+=`<path d="M9 37C21 37 27 13 39 13M9 13C21 13 27 37 39 37"/><path d="M34 9L39 13L34 18M34 32L39 37L34 42"/>`;
+ else g+=`<path d="M31 9C24 6 21 12 21 19L19 38C18 43 14 44 11 42M13 22H30"/><path d="M26 40L39 40"/>`;
+ return g+'</g></g>';
+}
+// ---- Bauteile ----
+function seg(c){
+ const [x,y,w,h]=c.b,n=c.opts.length;let g='';
+ c.opts.forEach((o,i)=>{
+  const sx=c.o==='v'?x:x+i*w/n,sy=c.o==='v'?y+i*h/n:y,sw=c.o==='v'?w:w/n,sh=c.o==='v'?h/n:h,on=o===c.v;
+  g+=`<g class="seg" data-id="${c.id}" data-val="${o}"><rect x="${sx}" y="${sy}" width="${sw}" height="${sh}" fill="${on?'var(--acc)':'var(--card)'}" stroke="var(--bd)" stroke-width="2"/>
+  <text class="t" x="${sx+sw/2}" y="${sy+sh/2+1}" text-anchor="middle" style="font-size:${Math.max(18,Math.min(sw,sh)*.45)}px;font-weight:700;dominant-baseline:central;fill:${on?'#fff':'var(--tx)'}">${o}</text></g>`;});
+ return g;
+}
+function drawComp(c){
+ const [x,y,w,h]=c.b,cx=x+w/2,one=h<100;
+ let g=`<g class="c ${c.c}${selId===c.id?' sel':''}" data-id="${c.id}"><rect class="bx" x="${x}" y="${y}" width="${w}" height="${h}" rx="5"/>`;
+ if(c.t==='pad'){
+  g+=`<text class="t" x="${cx}" y="${y+h*(one?.36:.38)}" text-anchor="middle" style="font-size:${one?32:38}px;font-weight:700;dominant-baseline:central">${String(c.v).replace('.',',')}</text>
+  <text class="t" x="${cx}" y="${y+h*(one?.80:.62)}" text-anchor="middle" style="font-size:15px;fill:var(--mut)">${c.n}${c.tag&&one?' · '+c.tag:''}</text>`;
+  if(c.tag&&!one)g+=`<text class="t" x="${cx}" y="${y+h*.76}" text-anchor="middle" style="font-size:15px;fill:var(--mut)">${c.tag}</text>`;
+ }
+ g+='</g>';
+ if(c.t==='sw')g+=seg(c)+`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="5" fill="none" stroke="${c.c==='r'?'var(--red)':'var(--blue)'}" stroke-width="5" pointer-events="none"/>`;
+ g+=icon(c.ic[0],c.ic[1],c.ic[2])+`<text class="t" x="${c.rg[1]}" y="${c.rg[2]}" text-anchor="${c.rg[3]}" style="font-size:22px">${c.rg[0]}</text>`;
+ (c.out||[]).forEach(o=>g+=`<text class="t" x="${o[1]}" y="${o[2]}" text-anchor="${o[3]}" style="font-size:15px;fill:var(--mut)">${o[0]}</text>`);
+ return g;
+}
+// ---- Kreise ----
+function pill(cx,y,txt,col){const w=Math.max(50,txt.length*13+20);return `<rect class="t" x="${cx-w/2}" y="${y-13}" width="${w}" height="26" rx="13" fill="var(--card)" stroke="${col}" stroke-width="3"/><text class="t" x="${cx}" y="${y+1}" text-anchor="middle" style="font-size:17px;font-weight:700;dominant-baseline:central">${txt}</text>`;}
+function circle(cx,cy,r,col,val,unit,lab,opt){
+ const rc=col==='r'?'var(--red)':col==='b'?'var(--blue)':'var(--tx)',tint=col==='r'?'rgba(229,34,43,.08)':col==='b'?'rgba(16,160,232,.10)':'rgba(120,130,145,.10)';
+ const sel=opt.sel,ring=sel?'var(--acc)':rc;
+ let g=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${sel?'rgba(47,111,237,.15)':tint}" stroke="${ring}" stroke-width="${sel?9:6}"/>`;
+ if(opt.edit)g+=`<circle class="t" cx="${cx}" cy="${cy}" r="${r-11}" fill="none" stroke="${ring}" stroke-width="2" stroke-dasharray="3 6" opacity=".7"/>`;
+ g+=`<text class="t" x="${cx}" y="${cy-3}" text-anchor="middle" style="font-size:${r>50?36:28}px;font-weight:700;dominant-baseline:central">${val}</text>
+ <text class="t" x="${cx}" y="${cy+r*.52}" text-anchor="middle" style="font-size:${r>50?15:13}px;fill:var(--mut)">${unit}</text>`+pill(cx,cy-r,lab,ring);
+ return g;
+}
+function fval(f){return f.k==='d'?S[f.ed.key]:f.k==='t'?txLevel(f.nd):rxBand(f.nd,f.k);}
+function drawFld(f){
+ const [cx,cy,r]=f.p;
+ return `<g class="fl" data-id="${f.id}" data-fld="1"><circle cx="${cx}" cy="${cy}" r="${r+12}" fill="transparent"/>`+circle(cx,cy,r,f.c,short(fval(f)),f.k==='d'?'dB':'dBµV',f.tx,{sel:selId===f.id||(f.k==='d'&&node===f.nd&&!selId),edit:!!f.ed})+'</g>';
+}
+function drawAmp(){
+ let h=`<g transform="translate(10,4) scale(.8)"><rect x="22" y="59" width="1279" height="1071" fill="none" stroke="var(--tx)" stroke-width="14"/>`;
+ for(const k in SETS){const [x,y,w,hh]=SETS[k];h+=`<rect class="set${node===k?' on':''}" data-node="${k}" x="${x}" y="${y}" width="${w}" height="${hh}" rx="16"/>`;}
+ h+=`<g fill="none" stroke-width="11" stroke-linejoin="round"><path stroke="var(--red)" d="M148 1123V168H1178V1115M148 1123V1172M1178 1115V1172"/><path stroke="var(--blue)" d="M207 1113V885H567V455H1133V1125M207 1113V1172M1133 1125V1172"/></g>`;
+ comps.forEach(c=>h+=drawComp(c));
+ h+=`<text x="240" y="1205" text-anchor="middle" style="font-size:32px;font-weight:700">Eingang</text><text x="1150" y="1205" text-anchor="middle" style="font-size:32px;font-weight:700">Ausgang</text>`;
+ flds.filter(f=>f.g==='L').forEach(f=>h+=drawFld(f));
+ h+='</g>';
+ const m=SETSR;
+ h+=`<rect x="1130" y="740" width="1020" height="350" rx="12" fill="var(--card)" stroke="var(--bd)" stroke-width="2"/>
+ <rect class="set${node==='mmd'?' on':''}" data-node="mmd" x="${m[0]}" y="${m[1]}" width="${m[2]}" height="${m[3]}" rx="16"/>
+ <text x="1155" y="785" style="font-size:24px;fill:var(--mut)">Ausgang → Verteiler → MMD</text>
+ <text x="1840" y="835" text-anchor="middle" style="font-size:28px;font-weight:700">Am MMD</text>
+ <g stroke="var(--mut)" stroke-width="4" fill="none"><path d="M1326 930H1374M1516 930H1622"/></g><g fill="var(--mut)"><path d="M1372 922L1386 930L1372 938zM1620 922L1634 930L1620 938z"/></g>`;
+ flds.filter(f=>f.g==='R').forEach(f=>h+=drawFld(f));
+ h+=chartRX()+chartTX();
+ $('s').innerHTML=h;
+}
+const SETSR=[1630,800,440,250];
+// ---- Spektren ----
+function axis(lo,hi,Y0,Y1,X0,W){let h='';for(let v=Math.ceil(lo/5)*5;v<=hi;v+=5){const y=Y1-(v-lo)/(hi-lo)*(Y1-Y0);h+=`<line x1="${X0}" x2="${X0+W}" y1="${y}" y2="${y}" stroke="var(--bd)"/><text x="${X0-8}" y="${y+6}" text-anchor="end" style="font-size:17px">${v}</text>`;}return h;}
+function soll(v,lo,hi,Y0,Y1,X0,W){if(v<lo||v>hi)return'';const y=Y1-(v-lo)/(hi-lo)*(Y1-Y0);return `<line x1="${X0}" x2="${X0+W}" y1="${y}" y2="${y}" stroke="#1f9d55" stroke-width="2" stroke-dasharray="8 6"/><text x="${X0+W-4}" y="${y-6}" text-anchor="end" style="fill:#1f9d55;font-size:17px">Soll ${v}</text>`;}
+function legend(){return node==='ein'?'':`<text x="980" y="30" text-anchor="end" style="font-size:17px;fill:var(--mut)">Strich = Eingang (Vergleich)</text>`;}
+function chartRX(){
+ const X0=70,W=900,Y0=52,Y1=200,u=rxBand(node,'u'),v=rxBand(node,'v'),c=(u+v)/2,lo=Math.floor((c-12)/5)*5,hi=lo+25;
+ const my=q=>Y1-(Math.min(hi,Math.max(lo,q))-lo)/(hi-lo)*(Y1-Y0);
+ const N=110,bw=W/N,ghost=node!=='ein';
+ const singles=[...Array(N).keys()].filter(i=>i<2||(i>=12&&i<=50)||(i>=59&&i<=87)); // 2 Balken, Block, ... Lücke ... Block, nichts danach
+ const blocks=[[X0+2*bw,10*bw,.064],[X0+W*.8,W*.13,.865]]; // VHF-Block = 10 Balken
+ let h=`<g transform="translate(1130,10)"><rect x="0" y="0" width="1020" height="350" rx="12" fill="var(--card)" stroke="var(--bd)" stroke-width="2"/>
+ <text x="${X0}" y="32" style="font-size:26px;font-weight:700">RX-Spektrum · ${NAME[node]}</text>`+legend()+`
+ <rect x="${X0}" y="${Y0}" width="${W}" height="${Y1-Y0}" fill="none" stroke="var(--bd)"/>`+axis(lo,hi,Y0,Y1,X0,W);
+ singles.forEach(i=>{const y=my(rxLevel(node,(i+.5)/N));h+=`<rect x="${X0+i*bw+.6}" y="${y}" width="${bw*.72}" height="${Y1-y}" fill="#8dbbf0"/>`;});
+ blocks.forEach(([x,w,t])=>{const y=my(rxLevel(node,t)-3);h+=`<rect x="${x}" y="${y}" width="${w}" height="${Y1-y}" fill="#1d4fd8"/>`;});
+ if(ghost){singles.forEach(i=>{const y=my(rxLevel('ein',(i+.5)/N));h+=`<line x1="${X0+i*bw+.6}" x2="${X0+i*bw+bw*.72+.6}" y1="${y}" y2="${y}" stroke="var(--mut)" stroke-width="3"/>`;});
+  blocks.forEach(([x,w,t])=>{const y=my(rxLevel('ein',t)-3);h+=`<line x1="${x}" x2="${x+w}" y1="${y}" y2="${y}" stroke="var(--mut)" stroke-width="3" stroke-dasharray="8 5"/>`;});}
+ h+=soll(SOLL_RX,lo,hi,Y0,Y1,X0,W)+`<rect x="${X0+2}" y="${Y0+2}" width="${W*.495}" height="${Y1-Y0-4}" fill="none" stroke="var(--tx)" stroke-width="3"/><rect x="${X0+W*.505}" y="${Y0+2}" width="${W*.495-2}" height="${Y1-Y0-4}" fill="none" stroke="var(--tx)" stroke-width="3"/>
+ <text x="${X0+W*.25}" y="${Y0+28}" text-anchor="middle" style="font-size:24px">VHF</text><text x="${X0+W*.75}" y="${Y0+28}" text-anchor="middle" style="font-size:24px">UHF</text>
+ <text x="${X0}" y="${Y1+26}" style="font-size:17px">102.000</text><text x="${X0+W/2}" y="${Y1+26}" text-anchor="middle" style="font-size:17px">MHz</text><text x="${X0+W}" y="${Y1+26}" text-anchor="end" style="font-size:17px">1,002.000</text>
+ ${circle(90,300,42,'r',short(v),'dBµV','VHF',{})}${circle(215,300,42,'r',short(u),'dBµV','UHF',{})}
+ <text x="300" y="285" style="font-size:18px;fill:var(--mut)">Abweichung zum Soll (${SOLL_RX})</text>
+ <text x="300" y="320" style="font-size:26px;font-weight:700">VHF ${fs(v-SOLL_RX)} · UHF ${fs(u-SOLL_RX)}</text></g>`;
+ return h;
+}
+function chartTX(){
+ const X0=70,W=900,Y0=52,Y1=200,t0=txLevel(node),lo=Math.floor((t0-10)/5)*5,hi=lo+20,ghost=node!=='ein';
+ const my=q=>Y1-(Math.min(hi,Math.max(lo,q))-lo)/(hi-lo)*(Y1-Y0);
+ let h=`<g transform="translate(1130,370)"><rect x="0" y="0" width="1020" height="350" rx="12" fill="var(--card)" stroke="var(--bd)" stroke-width="2"/>
+ <text x="${X0}" y="32" style="font-size:26px;font-weight:700">TX-Spektrum · ${NAME[node]}</text>`+legend()+`
+ <rect x="${X0}" y="${Y0}" width="${W}" height="${Y1-Y0}" fill="none" stroke="var(--bd)"/>`+axis(lo,hi,Y0,Y1,X0,W);
+ [['1','#1c55e0'],['2','#6fb2f2'],['3','#4a9de8'],['4','#3f93e6'],['41','#bcd9f6']].forEach(([n,c],i)=>{ // alle Kanäle gleicher Wert
+  const x=X0+30+i*172,y=my(t0);h+=`<rect x="${x}" y="${y}" width="130" height="${Y1-y}" fill="${c}"/><text x="${x+65}" y="${y-6}" text-anchor="middle" style="font-size:18px">${n}</text><text x="${x+65}" y="${Y1-8}" text-anchor="middle" style="fill:#0b2a66;font-size:17px">${f1(t0)}</text>`;
+  if(ghost){const g=my(S.tx);h+=`<line x1="${x}" x2="${x+130}" y1="${g}" y2="${g}" stroke="var(--mut)" stroke-width="3" stroke-dasharray="8 5"/>`;}});
+ h+=soll(SOLL_TX,lo,hi,Y0,Y1,X0,W)+`<text x="${X0}" y="${Y1+26}" style="font-size:17px">21.0 MHz</text><text x="${X0+W}" y="${Y1+26}" text-anchor="end" style="font-size:17px">71.0 MHz</text>
+ ${circle(90,300,42,'b',short(t0),'dBµV','TX',{})}
+ <text x="170" y="285" style="font-size:18px;fill:var(--mut)">Abweichung zum Soll (${SOLL_TX})</text>
+ <text x="170" y="320" style="font-size:26px;font-weight:700">TX ${fs(t0-SOLL_TX)} dB</text></g>`;
+ return h;
+}
+// ---- Bedienung ----
+function target(id){
+ const c=comp(id);if(c&&c.t==='pad')return{n:c.n+(c.tag?' · '+c.tag:'')+' (0…'+c.max+' dB)',get:()=>c.v,set:q=>c.v=q,max:c.max,chips:1};
+ const f=flds.find(x=>x.id===id);if(f&&f.ed)return{n:f.ed.n,get:()=>S[f.ed.key],set:q=>S[f.ed.key]=q,max:f.ed.max,chips:0};
+ return null;
+}
+function panel(){
+ const t=selT,i=$('in');
+ $('sp').textContent='Spektrum: '+NAME[node];
+ if(!t){$('pn').textContent='Kästchen oder Kreis antippen';i.disabled=true;i.value='';$('ch').innerHTML='';return;}
+ $('pn').textContent=t.n;i.disabled=false;
+ $('ch').innerHTML=t.chips?[0,2,5,10].filter(n=>n<=t.max).map(n=>`<button type="button" data-n="${n}">${n}</button>`).join(' '):'';
+}
+function render(){drawAmp();panel();}
+$('s').addEventListener('click',ev=>{
+ const sg=ev.target.closest('[data-val]');
+ if(sg){comp(sg.dataset.id).v=+sg.dataset.val;if(node==='ein')node='aus';selId=null;selT=null;render();return;}
+ const e=ev.target.closest('[data-id]');
+ if(e){const id=e.dataset.id,f=flds.find(x=>x.id===id);
+  if(f)node=f.nd;else if(node==='ein')node='aus';
+  selId=id;selT=target(id);
+  if(!selT)selId=null;
+  render();
+  if(selT){const i=$('in');i.value=String(selT.get()||'').replace('.',',');i.focus({preventScroll:true});i.select();}
+  return;}
+ const n=ev.target.closest('[data-node]');if(n){node=n.dataset.node;render();}
+});
+$('in').addEventListener('input',()=>{if(!selT)return;const t=$('in').value.trim().replace(',','.');const n=t===''?0:Number(t);if(isNaN(n))return;selT.set(Math.min(selT.max,Math.max(0,n)));drawAmp();});
+$('ch').addEventListener('click',ev=>{const b=ev.target.closest('[data-n]');if(!b||!selT)return;selT.set(+b.dataset.n);$('in').value=b.dataset.n==='0'?'':b.dataset.n;drawAmp();});
+$('rs').addEventListener('click',()=>{S={...DEF};comps.forEach(c=>c.v=c.t==='sw'?c.opts[0]:0);selT=null;selId=null;node='aus';render();});
+render();
+</script></body></html>
