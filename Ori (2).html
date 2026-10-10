@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<!-- Ori · SUJ -->
+<html lang="de" data-theme="dark"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="author" content="SUJ">
+<title>Ori</title>
+<style>
+:root{--tx:#111827;--mut:#5b6678;--red:#ff5a52;--blue:#0a84ff;--green:#34c759;
+--glass:rgba(255,255,255,.50);--glass2:rgba(255,255,255,.32);--edge1:rgba(255,255,255,.95);--edge2:rgba(255,255,255,.22);
+--bgbase:#e9eefb;--b1:#c4b5ff;--b2:#8fe3ff;--b3:#ffd0b0;--b4:#b3f0cf;
+--rt:rgba(255,80,70,.16);--bt:rgba(10,132,255,.20);--kt:rgba(100,116,139,.18);--gt:rgba(52,199,89,.22);
+--itile:rgba(255,255,255,.70);--iglyph:#1f2937;--grid:rgba(17,24,39,.09);--shadowc:#28326e;--hio:.5;--under:rgba(0,0,0,0);--line:rgba(255,255,255,.75);color-scheme:light;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root[data-theme="dark"]{--tx:#f5f7fa;--mut:#9aa4b2;--red:#ff5a4f;--blue:#4da3ff;--green:#30d158;
+--glass:rgba(255,255,255,.075);--glass2:rgba(255,255,255,.05);--edge1:rgba(255,255,255,.38);--edge2:rgba(255,255,255,.05);
+--bgbase:#070b16;--b1:#1c2766;--b2:#0b5c7d;--b3:#3a2352;--b4:#0e6a4c;
+--rt:rgba(255,80,70,.13);--bt:rgba(77,163,255,.20);--kt:rgba(148,163,184,.16);--gt:rgba(48,209,88,.20);
+--itile:rgba(255,255,255,.12);--iglyph:#e8edf5;--grid:rgba(255,255,255,.08);--shadowc:#000;--hio:.1;--under:rgba(4,8,20,.5);--line:rgba(255,255,255,.14);color-scheme:dark}
+*{box-sizing:inherit}
+body{margin:0;min-height:100vh;background:var(--bgbase);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,"Helvetica Neue",system-ui,sans-serif;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:-25%;z-index:-1;background:radial-gradient(40% 40% at 18% 18%,var(--b1),transparent 70%),radial-gradient(38% 38% at 82% 14%,var(--b2),transparent 70%),radial-gradient(42% 42% at 78% 88%,var(--b3),transparent 70%),radial-gradient(40% 40% at 14% 86%,var(--b4),transparent 70%);filter:blur(30px);animation:drift 36s ease-in-out infinite alternate}
+@keyframes drift{from{transform:translate3d(-2%,-1%,0) scale(1)}to{transform:translate3d(2%,2%,0) scale(1.08)}}
+@media (prefers-reduced-motion:reduce){body::before{animation:none}}
+main{max-width:2000px;margin:0 auto;padding:0 12px 8px;position:relative}
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px;height:62px}
+.logo{font-size:36px;font-weight:800;letter-spacing:.3px;background:linear-gradient(135deg,#6ee7a0,#34c759 55%,#1a9b45);-webkit-background-clip:text;background-clip:text;color:transparent}
+.acts{display:flex;gap:10px}
+.ib{width:46px;height:46px;border-radius:50%;border:1px solid var(--edge2);background:var(--glass);-webkit-backdrop-filter:blur(22px) saturate(1.6);backdrop-filter:blur(22px) saturate(1.6);box-shadow:0 6px 18px rgba(40,50,110,.18),inset 0 1px 0 var(--edge1);color:var(--tx);display:grid;place-items:center;cursor:pointer;padding:0;transition:transform .15s}
+.ib:active{transform:scale(.9)}
+.ib svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+:root[data-theme="dark"] .i-moon,:root[data-theme="light"] .i-sun{display:none}
+.btn{height:40px;padding:0 20px;border:0;border-radius:20px;font-size:15px;font-weight:700;background:var(--green);color:#fff;cursor:pointer}
+.imp{position:absolute;right:12px;top:60px;z-index:9;background:var(--glass);border:1px solid var(--edge2);-webkit-backdrop-filter:blur(26px) saturate(1.6);backdrop-filter:blur(26px) saturate(1.6);border-radius:24px;padding:12px;display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;width:min(460px,96vw);box-shadow:0 14px 40px rgba(40,50,110,.28),inset 0 1px 0 var(--edge1)}
+.imp[hidden]{display:none}
+.imp textarea{flex:1 1 100%;height:76px;border:1px solid var(--edge2);border-radius:14px;background:var(--glass2);color:var(--tx);font:13px ui-monospace,Menlo,monospace;padding:10px;resize:none;outline:none}
+#msg{font-size:14px;align-self:center;color:var(--mut)}
+svg{width:100%;height:auto;max-height:calc(100vh - 78px);display:block;touch-action:manipulation;background:none;overflow:visible}
+svg text{fill:var(--tx);font-family:inherit}
+.t{pointer-events:none}
+.c,.fl,.seg{cursor:pointer}
+.gl{fill:var(--glass);stroke:url(#edge);stroke-width:2;filter:url(#sh)}
+.bx,.shp{filter:url(#sh2)}
+.c.sel .bx,.fl.sel .shp{stroke:var(--green);stroke-width:6;filter:drop-shadow(0 0 7px rgba(52,199,89,.65))}
+.fl.sel .shp{fill:var(--gt)}
+.set{fill:transparent;stroke:none;cursor:pointer}
+.set.on{fill:rgba(255,255,255,.10);stroke:var(--edge1);stroke-width:2;stroke-dasharray:10 7}
+.edsq{filter:drop-shadow(0 0 10px rgba(52,199,89,.45))}
+.edin{width:100%;height:100%;border:0;background:transparent;text-align:center;font-weight:700;font-size:40px;font-family:inherit;color:var(--tx);outline:none;padding:0}
+.edin:disabled{color:var(--mut);opacity:1}
+</style></head><body><main>
+<header class="top"><div class="brand"><span class="logo">Ori</span></div>
+<div class="acts">
+<button class="ib" id="th" type="button" aria-label="Hell / Dunkel" title="Hell / Dunkel"><svg class="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><svg class="i-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+<button class="ib" id="rs" type="button" aria-label="Zurücksetzen" title="Zurücksetzen"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>
+<button class="ib" id="imp" type="button" aria-label="Code einfügen" title="Code einfügen"><svg viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg></button>
+<button class="ib" id="cp" type="button" aria-label="Code kopieren" title="Code kopieren"><svg viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button>
+</div></header>
+<div class="imp" id="impbox" hidden><textarea id="code" placeholder="Code hier einfügen" spellcheck="false"></textarea><button class="btn" id="load" type="button">Laden</button><span id="msg"></span></div>
+<svg id="s" viewBox="0 0 2160 1100" role="img" aria-label="Ori V40">
+ <defs>
+  <linearGradient id="edge" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--edge1)"/><stop offset=".55" style="stop-color:var(--edge2)"/><stop offset="1" style="stop-color:var(--edge1);stop-opacity:.55"/></linearGradient>
+  <linearGradient id="hi" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+  <linearGradient id="bar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fd0ff"/><stop offset="1" stop-color="#4f9bff"/></linearGradient>
+  <linearGradient id="blk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5b9bff"/><stop offset="1" stop-color="#1d4ed8"/></linearGradient>
+  <filter id="sh" x="-8%" y="-8%" width="116%" height="130%"><feDropShadow dx="0" dy="12" stdDeviation="16" style="flood-color:var(--shadowc)" flood-opacity=".22"/></filter>
+  <filter id="sh2" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="5" stdDeviation="6" style="flood-color:var(--shadowc)" flood-opacity=".22"/></filter>
+ </defs>
+ <g id="dyn"></g>
+ <g id="ed" transform="translate(10,4) scale(.8)">
+  <text id="edn" x="700" y="1192" text-anchor="middle" style="font-size:26px;font-weight:700">Kästchen oder Kreis antippen</text>
+  <text id="edr" x="700" y="1217" text-anchor="middle" style="font-size:19px;fill:var(--mut)"></text>
+  <rect class="edsq" x="636" y="1228" width="128" height="128" rx="34" fill="var(--gt)" stroke="var(--green)" stroke-width="5"/>
+  <foreignObject x="645" y="1260" width="110" height="58"><input id="in" class="edin" type="text" inputmode="decimal" autocomplete="off" disabled></foreignObject>
+  <text id="edu" x="700" y="1334" text-anchor="middle" style="font-size:17px;fill:var(--mut)"></text>
+ </g>
+</svg>
+</main>
+<script>
+document.documentElement.dataset.o=String.fromCharCode(83,85,74);
+const $=id=>document.getElementById(id);
+const DEF={uhf:60,vhf:58,tx:100,vd:12,md:14};
+let S={...DEF};
+const comps=[
+ {id:'a',c:'r',t:'pad',n:'Pad',max:20,v:0,b:[104,562,86,152],ic:['I',63,590],rg:['0-20',57,650,'middle']},
+ {id:'is',c:'r',t:'pad',n:'Interstage',tag:'VHF',max:20,v:0,b:[105,261,86,152],ic:['f',68,287],rg:['0-20',60,336,'middle']},
+ {id:'eq',c:'r',t:'pad',n:'Equalizer',tag:'UHF',max:10,v:0,b:[134,118,157,74],ic:['X',260,225],rg:['0-10',261,267,'middle']},
+ {id:'g',c:'r',t:'sw',n:'Verstärkung',opts:[32,41],v:32,b:[525,112,70,132],o:'v',ic:['I',557,278],rg:['32-41',557,323,'middle'],out:[['Verstärkung',557,348,'middle']]},
+ {id:'p',c:'r',t:'pad',n:'Pad',max:7,v:0,b:[736,113,70,131],ic:['I',771,278],rg:['0-7',771,327,'middle']},
+ {id:'f',c:'r',t:'sw',n:'Interstage',opts:[0,7,10],v:0,b:[907,118,158,74],o:'h',ic:['X',934,226],rg:['0/7/10',1010,232,'middle'],out:[['Interstage · VHF',1010,268,'middle']]},
+ {id:'t1',c:'b',t:'pad',n:'Pad',max:20,v:0,b:[366,825,71,135],ic:['I',405,790],rg:['0-20',395,986,'middle']},
+ {id:'t2',c:'b',t:'pad',n:'Pad',max:12,v:0,b:[507,825,79,133],ic:['X',547,993],rg:['0-12',553,1042,'middle']},
+ {id:'tg',c:'b',t:'sw',n:'Dämpfung',opts:[22,33],v:22,b:[532,514,71,134],o:'v',ic:['I',434,586],rg:['22-33',495,577,'middle'],out:[['Dämpfung',470,640,'middle']]},
+ {id:'t4',c:'b',t:'pad',n:'Pad',max:20,v:0,b:[786,410,152,86],ic:['I',847,538],rg:['0-20',841,582,'middle']}];
+const comp=id=>comps.find(c=>c.id===id),V=id=>comp(id).v;
+// g: L = links (skaliert), R = rechts unten, A = absolut
+const L=(n,key,max,u)=>({n,key,min:0,max,u:'dBµV'});
+const flds=[
+ {id:'ev',nd:'ein',k:'v',c:'r',tx:'VHF',g:'L',p:[100,1285,54],ed:L('Eingang VHF','vhf',130)},
+ {id:'eu',nd:'ein',k:'u',c:'r',tx:'UHF',g:'L',p:[240,1285,54],ed:L('Eingang UHF','uhf',130)},
+ {id:'et',nd:'ein',k:'t',c:'b',tx:'TX',g:'L',p:[380,1285,54],ed:L('Eingang TX','tx',130)},
+ {id:'av',nd:'aus',k:'v',c:'r',tx:'VHF',g:'L',p:[985,1285,54]},
+ {id:'au',nd:'aus',k:'u',c:'r',tx:'UHF',g:'L',p:[1125,1285,54]},
+ {id:'at',nd:'aus',k:'t',c:'b',tx:'TX',g:'L',p:[1265,1285,54]},
+ {id:'vt',nd:'ver',k:'d',c:'k',tx:'Verteiler',g:'R',p:[1260,925,60],ed:{n:'Verteiler',key:'vd',min:4,max:20,u:'dB'}},
+ {id:'mm',nd:'mmd',k:'d',c:'k',tx:'MMD',g:'R',p:[1450,925,60],ed:{n:'MMD',key:'md',min:8,max:20,u:'dB'}},
+ {id:'mv',nd:'mmd',k:'v',c:'r',tx:'VHF',g:'R',p:[1690,925,58]},
+ {id:'mu',nd:'mmd',k:'u',c:'r',tx:'UHF',g:'R',p:[1840,925,58]},
+ {id:'mt',nd:'mmd',k:'t',c:'b',tx:'TX',g:'R',p:[1990,925,58]}];
+const NAME={ein:'Eingang',aus:'Ausgang',ver:'Verteiler',mmd:'MMD'};
+const SETS={ein:[28,1165,430,185],aus:[905,1165,420,185]},SETSR=[1630,785,440,285];
+let node='aus',selT=null,selId=null;
+const f1=n=>(Math.round(n*10)/10).toFixed(1).replace('.',',');
+const fs=n=>(n>0?'+':'')+f1(n).replace('-','−');
+const short=n=>f1(n).replace(/,0$/,'');
+function noise(i){const x=Math.sin(i*12.9898)*43758.5453;return(x-Math.floor(x)-.5)*.7;}
+function shape(t){const i=Math.round(t*100);return t<.5?2-4*(t/.5)+noise(i):-1.5+3*((t-.5)/.5)+noise(i);}
+// ---- Rechnung ----
+function rxBand(nd,band){
+ const u=band==='u',b=u?S.uhf:S.vhf;
+ if(nd==='ein')return b;
+ const aus=b+V('g')-V('a')-V('p')-(u?V('eq'):V('is')+V('f'));
+ return nd==='aus'?aus:nd==='ver'?aus-S.vd:aus-S.vd-S.md;
+}
+const rxLevel=(nd,t)=>rxBand(nd,t<.5?'v':'u')+shape(t);
+function txLevel(nd){
+ if(nd==='ein')return S.tx;
+ const aus=S.tx-V('tg')+V('t1')+V('t2')+V('t4');
+ return nd==='aus'?aus:nd==='ver'?aus+S.vd:aus+S.vd+S.md;
+}
+// ---- Glas ----
+const glass=(x,y,w,h,r)=>`<rect class="gl" x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}"/><rect class="t" x="${x+3}" y="${y+3}" width="${w-6}" height="${Math.min(h*.45,90)}" rx="${r-3}" fill="url(#hi)" style="opacity:var(--hio)"/>`;
+// ---- Symbole ----
+function icon(k,cx,cy){
+ let g=`<g class="t" transform="translate(${cx-24},${cy-25})"><rect width="48" height="50" rx="14" fill="var(--itile)" stroke="url(#edge)" stroke-width="1.5"/><g stroke="var(--iglyph)" stroke-width="2.8" fill="none" stroke-linecap="round" stroke-linejoin="round">`;
+ if(k==='I')g+=`<path d="M17 11H31M17 39H31M24 11V39"/><path d="M13 37L36 13M30 13H36V19"/>`;
+ else if(k==='X')g+=`<path d="M9 37C21 37 27 13 39 13M9 13C21 13 27 37 39 37"/><path d="M34 9L39 13L34 18M34 32L39 37L34 42"/>`;
+ else g+=`<path d="M31 9C24 6 21 12 21 19L19 38C18 43 14 44 11 42M13 22H30"/><path d="M26 40L39 40"/>`;
+ return g+'</g></g>';
+}
+// Schalter wie ein iOS-Segment: aktiver Wert als farbige Pille
+function seg(c){
+ const [x,y,w,h]=c.b,n=c.opts.length,col=c.c==='r'?'var(--red)':'var(--blue)';let g='';
+ c.opts.forEach((o,i)=>{
+  const sx=c.o==='v'?x:x+i*w/n,sy=c.o==='v'?y+i*h/n:y,sw=c.o==='v'?w:w/n,sh=c.o==='v'?h/n:h,on=o===c.v;
+  g+=`<g class="seg" data-id="${c.id}" data-val="${o}"><rect x="${sx}" y="${sy}" width="${sw}" height="${sh}" fill="transparent"/>`;
+  if(on)g+=`<rect class="t" x="${sx+5}" y="${sy+5}" width="${sw-10}" height="${sh-10}" rx="12" fill="${col}"/><rect class="t" x="${sx+5}" y="${sy+5}" width="${sw-10}" height="${(sh-10)*.5}" rx="12" fill="url(#hi)" opacity=".5"/>`;
+  g+=`<text class="t" x="${sx+sw/2}" y="${sy+sh/2+1}" text-anchor="middle" style="font-size:${Math.max(18,Math.min(sw,sh)*.45)}px;font-weight:700;dominant-baseline:central;fill:${on?'#fff':'var(--tx)'}">${o}</text></g>`;});
+ return g;
+}
+function drawComp(c){
+ const [x,y,w,h]=c.b,cx=x+w/2,one=h<100,tint=c.c==='r'?'var(--rt)':'var(--bt)';
+ let g=`<g class="c ${c.c}${selId===c.id?' sel':''}" data-id="${c.id}"><rect class="bx" x="${x}" y="${y}" width="${w}" height="${h}" rx="16" fill="${tint}" stroke="url(#edge)" stroke-width="2.5"/>`;
+ if(c.t==='pad'){
+  g+=`<text class="t" x="${cx}" y="${y+h*(one?.36:.38)}" text-anchor="middle" style="font-size:${one?32:38}px;font-weight:700;dominant-baseline:central">${String(c.v).replace('.',',')}</text>
+  <text class="t" x="${cx}" y="${y+h*(one?.80:.62)}" text-anchor="middle" style="font-size:15px;fill:var(--mut)">${c.n}${c.tag&&one?' · '+c.tag:''}</text>`;
+  if(c.tag&&!one)g+=`<text class="t" x="${cx}" y="${y+h*.76}" text-anchor="middle" style="font-size:15px;fill:var(--mut)">${c.tag}</text>`;
+ }
+ g+='</g>';
+ if(c.t==='sw')g+=seg(c);
+ g+=icon(c.ic[0],c.ic[1],c.ic[2])+`<text class="t" x="${c.rg[1]}" y="${c.rg[2]}" text-anchor="${c.rg[3]}" style="font-size:22px;font-weight:600">${c.rg[0]}</text>`;
+ (c.out||[]).forEach(o=>g+=`<text class="t" x="${o[1]}" y="${o[2]}" text-anchor="${o[3]}" style="font-size:15px;fill:var(--mut)">${o[0]}</text>`);
+ return g;
+}
+// ---- Felder: Quadrat = Eingabe, Kreis = Anzeige ----
+const COL={r:['var(--red)','var(--rt)'],b:['var(--blue)','var(--bt)'],k:['#7c8aa0','var(--kt)']};
+function pill(cx,y,txt,col){const w=Math.max(50,txt.length*13+20);return `<rect class="t" x="${cx-w/2}" y="${y-13}" width="${w}" height="26" rx="13" fill="${col}"/><text class="t" x="${cx}" y="${y+1}" text-anchor="middle" style="font-size:17px;font-weight:700;dominant-baseline:central;fill:#fff">${txt}</text>`;}
+function circle(cx,cy,r,col,val,unit,lab,opt){
+ const [rc,tint]=COL[col],sq=!!opt.edit;
+ const shp=(d,a)=>sq?`<rect ${a} x="${cx-r-d}" y="${cy-r-d}" width="${2*(r+d)}" height="${2*(r+d)}" rx="${Math.max(3,22+d)}"/>`:`<circle ${a} cx="${cx}" cy="${cy}" r="${r+d}"/>`;
+ let g=shp(0,`class="shp" fill="${tint}" stroke="url(#edge)" stroke-width="2.5"`);
+ if(sq)g+=shp(-11,`class="t" fill="none" stroke="${rc}" stroke-width="2" stroke-dasharray="3 6" opacity=".6"`);
+ g+=`<text class="t" x="${cx}" y="${cy-3}" text-anchor="middle" style="font-size:${r>50?36:28}px;font-weight:700;dominant-baseline:central">${val}</text>
+ <text class="t" x="${cx}" y="${cy+r*.52}" text-anchor="middle" style="font-size:${r>50?15:13}px;fill:var(--mut)">${unit}</text>`+pill(cx,cy-r,lab,rc);
+ return g;
+}
+function fval(f){return f.k==='d'?S[f.ed.key]:f.k==='t'?txLevel(f.nd):rxBand(f.nd,f.k);}
+function drawFld(f){
+ const [cx,cy,r]=f.p;
+ return `<g class="fl${selId===f.id?' sel':''}" data-id="${f.id}"><circle cx="${cx}" cy="${cy}" r="${r+12}" fill="transparent"/>`+circle(cx,cy,r,f.c,short(fval(f)),f.k==='d'?'dB':'dBµV',f.tx,{edit:!!f.ed})+'</g>';
+}
+function drawAmp(){
+ const msk=`<mask id="wm" maskUnits="userSpaceOnUse" x="0" y="0" width="1400" height="1300"><rect width="1400" height="1300" fill="#fff"/>${comps.map(c=>`<rect x="${c.b[0]}" y="${c.b[1]}" width="${c.b[2]}" height="${c.b[3]}" rx="16" fill="#000"/>`).join('')}</mask>`;
+ let h=`<rect class="t" x="2" y="2" width="1098" height="1096" rx="42" fill="var(--under)"/>`+glass(2,2,1098,1096,42)+`<g transform="translate(10,4) scale(.8)">${msk}<rect x="22" y="59" width="1279" height="1071" rx="40" fill="var(--glass2)" stroke="var(--line)" stroke-width="3"/>`;
+ for(const k in SETS){const [x,y,w,hh]=SETS[k];h+=`<rect class="set${node===k?' on':''}" data-node="${k}" x="${x}" y="${y}" width="${w}" height="${hh}" rx="26"/>`;}
+ h+=`<g mask="url(#wm)" fill="none" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"><path stroke="var(--red)" d="M148 1123V168H1178V1115M148 1123V1172M1178 1115V1172"/><path stroke="var(--blue)" d="M207 1113V885H567V455H1133V1125M207 1113V1172M1133 1125V1172"/></g>`;
+ comps.forEach(c=>h+=drawComp(c));
+ h+=`<text x="240" y="1205" text-anchor="middle" style="font-size:32px;font-weight:700">Eingang</text><text x="1125" y="1205" text-anchor="middle" style="font-size:32px;font-weight:700">Ausgang</text>`;
+ flds.filter(f=>f.g==='L').forEach(f=>h+=drawFld(f));
+ h+='</g>';
+ const m=SETSR;
+ h+=glass(1130,730,1020,360,36)+`<rect class="set${node==='mmd'?' on':''}" data-node="mmd" x="${m[0]}" y="${m[1]}" width="${m[2]}" height="${m[3]}" rx="26"/>
+ <text x="1840" y="815" text-anchor="middle" style="font-size:30px;font-weight:700">Endwerte</text>
+ <g stroke="var(--mut)" stroke-width="4" fill="none" stroke-linecap="round"><path d="M1326 925H1374M1516 925H1622"/></g><g fill="var(--mut)"><path d="M1372 917L1386 925L1372 933zM1620 917L1634 925L1620 933z"/></g>`;
+ flds.filter(f=>f.g==='R').forEach(f=>h+=drawFld(f));
+ h+=chartRX()+chartTX();
+ $('dyn').innerHTML=h;
+}
+// ---- Spektren ----
+function axis(lo,hi,Y0,Y1,X0,W){let h='';for(let v=Math.ceil(lo/5)*5;v<=hi;v+=5){const y=Y1-(v-lo)/(hi-lo)*(Y1-Y0);h+=`<line x1="${X0}" x2="${X0+W}" y1="${y}" y2="${y}" stroke="var(--grid)" stroke-width="2"/><text x="${X0-10}" y="${y+6}" text-anchor="end" style="font-size:17px;fill:var(--mut)">${v}</text>`;}return h;}
+function chartRX(){
+ const X0=70,W=900,Y0=52,Y1=270,u=rxBand(node,'u'),v=rxBand(node,'v'),c=(u+v)/2,lo=Math.floor((c-12)/5)*5,hi=lo+25;
+ const my=q=>Y1-(Math.min(hi,Math.max(lo,q))-lo)/(hi-lo)*(Y1-Y0);
+ const N=110,bw=W/N,ghost=node!=='ein';
+ const singles=[...Array(N).keys()].filter(i=>i<2||(i>=12&&i<=50)||(i>=59&&i<=87));
+ const blocks=[[X0+2*bw,10*bw,.064],[X0+W*.8,W*.13,.865]]; // VHF-Block = 10 Balken
+ let h=glass(1130,10,1020,340,36)+`<g transform="translate(1130,10)">
+ <text x="${X0}" y="36" style="font-size:26px;font-weight:700">RX-Spektrum · ${NAME[node]}</text>
+ <rect x="${X0}" y="${Y0}" width="${W}" height="${Y1-Y0}" rx="14" fill="var(--glass2)"/>`+axis(lo,hi,Y0,Y1,X0,W);
+ singles.forEach(i=>{const y=my(rxLevel(node,(i+.5)/N));h+=`<rect x="${X0+i*bw+.6}" y="${y}" width="${bw*.72}" height="${Y1-y}" rx="2" fill="url(#bar)"/>`;});
+ blocks.forEach(([x,w,t])=>{const y=my(rxLevel(node,t)-3);h+=`<rect x="${x}" y="${y}" width="${w}" height="${Y1-y}" rx="5" fill="url(#blk)"/>`;});
+ if(ghost){singles.forEach(i=>{const y=my(rxLevel('ein',(i+.5)/N));h+=`<line x1="${X0+i*bw+.6}" x2="${X0+i*bw+bw*.72+.6}" y1="${y}" y2="${y}" stroke="var(--mut)" stroke-width="3"/>`;});
+  blocks.forEach(([x,w,t])=>{const y=my(rxLevel('ein',t)-3);h+=`<line x1="${x}" x2="${x+w}" y1="${y}" y2="${y}" stroke="var(--mut)" stroke-width="3" stroke-dasharray="8 5"/>`;});}
+ h+=`<rect x="${X0+3}" y="${Y0+3}" width="${W*.495}" height="${Y1-Y0-6}" rx="12" fill="none" stroke="var(--tx)" stroke-width="2" opacity=".3"/><rect x="${X0+W*.505}" y="${Y0+3}" width="${W*.495-3}" height="${Y1-Y0-6}" rx="12" fill="none" stroke="var(--tx)" stroke-width="2" opacity=".3"/>
+ <text x="${X0+W*.25}" y="${Y0+30}" text-anchor="middle" style="font-size:24px;font-weight:700">VHF</text><text x="${X0+W*.75}" y="${Y0+30}" text-anchor="middle" style="font-size:24px;font-weight:700">UHF</text>
+ <text x="${X0}" y="${Y1+28}" style="font-size:17px;fill:var(--mut)">102.000</text><text x="${X0+W/2}" y="${Y1+28}" text-anchor="middle" style="font-size:17px;fill:var(--mut)">MHz</text><text x="${X0+W}" y="${Y1+28}" text-anchor="end" style="font-size:17px;fill:var(--mut)">1,002.000</text></g>`;
+ return h;
+}
+function chartTX(){
+ const X0=70,W=900,Y0=52,Y1=270,t0=txLevel(node),lo=Math.floor((t0-10)/5)*5,hi=lo+20,ghost=node!=='ein';
+ const my=q=>Y1-(Math.min(hi,Math.max(lo,q))-lo)/(hi-lo)*(Y1-Y0);
+ let h=glass(1130,370,1020,340,36)+`<g transform="translate(1130,370)">
+ <text x="${X0}" y="36" style="font-size:26px;font-weight:700">TX-Spektrum · ${NAME[node]}</text>
+ <rect x="${X0}" y="${Y0}" width="${W}" height="${Y1-Y0}" rx="14" fill="var(--glass2)"/>`+axis(lo,hi,Y0,Y1,X0,W);
+ [['1','#1d4ed8'],['2','#3b82f6'],['3','#60a5fa'],['4','#93c5fd'],['41','#bfdbfe']].forEach(([n,c],i)=>{ // alle Kanäle gleicher Wert
+  const x=X0+30+i*172,y=my(t0);h+=`<rect x="${x}" y="${y}" width="130" height="${Y1-y}" rx="8" fill="${c}"/><text x="${x+65}" y="${y-8}" text-anchor="middle" style="font-size:18px;font-weight:600">${n}</text><text x="${x+65}" y="${Y1-10}" text-anchor="middle" style="fill:${i<3?'#fff':'#0b2a66'};font-size:17px;font-weight:700">${f1(t0)}</text>`;
+  if(ghost){const g=my(S.tx);h+=`<line x1="${x}" x2="${x+130}" y1="${g}" y2="${g}" stroke="var(--mut)" stroke-width="3" stroke-dasharray="8 5"/>`;}});
+ h+=`<text x="${X0}" y="${Y1+28}" style="font-size:17px;fill:var(--mut)">21.0 MHz</text><text x="${X0+W}" y="${Y1+28}" text-anchor="end" style="font-size:17px;fill:var(--mut)">71.0 MHz</text></g>`;
+ return h;
+}
+// ---- Eingabe ----
+function target(id){
+ const c=comp(id);
+ if(c&&c.t==='pad')return{n:c.n+(c.tag?' · '+c.tag:''),rng:'0…'+c.max+' dB',u:'dB',get:()=>c.v,set:q=>c.v=q,min:0,max:c.max};
+ const f=flds.find(x=>x.id===id);
+ if(f&&f.ed){const e=f.ed;return{n:e.n,rng:e.min+'…'+e.max+' '+e.u,u:e.u,get:()=>S[e.key],set:q=>S[e.key]=q,min:e.min,max:e.max};}
+ return null;
+}
+const inp=$('in'),fmtIn=n=>String(n).replace('.',',');
+function panel(){
+ const t=selT;
+ $('edn').textContent=t?t.n:'Kästchen oder Kreis antippen';
+ $('edr').textContent=t?t.rng:'';$('edu').textContent=t?t.u:'';
+ inp.disabled=!t;inp.value=t?fmtIn(t.get()):'';
+}
+function render(){drawAmp();panel();}
+function commit(){
+ if(!selT)return;
+ const raw=inp.value.trim().replace(',','.');
+ let n=raw===''||isNaN(+raw)?selT.get():+raw;
+ n=Math.min(selT.max,Math.max(selT.min,n));
+ const changed=n!==selT.get();
+ selT.set(n);inp.value=fmtIn(n);
+ if(changed)drawAmp();
+}
+inp.addEventListener('input',()=>{
+ if(!selT)return;const t=inp.value.trim().replace(',','.');
+ if(t===''){if(selT.min===0){selT.set(0);drawAmp();}return;}
+ if(t==='.'||isNaN(+t))return;
+ let n=+t;if(n>selT.max){n=selT.max;inp.value=fmtIn(n);}
+ if(n<selT.min)return; // erst beim Verlassen auf Minimum setzen
+ selT.set(n);drawAmp();
+});
+inp.addEventListener('change',commit);inp.addEventListener('blur',commit);
+inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();});
+$('s').addEventListener('click',ev=>{
+ const sg=ev.target.closest('[data-val]');
+ if(sg){comp(sg.dataset.id).v=+sg.dataset.val;if(node==='ein')node='aus';selId=null;selT=null;render();return;}
+ const e=ev.target.closest('[data-id]');
+ if(e){const id=e.dataset.id,f=flds.find(x=>x.id===id);
+  if(f&&f.nd)node=f.nd;else if(!f&&node==='ein')node='aus';
+  selId=id;selT=target(id);if(!selT)selId=null;
+  render();if(selT){inp.focus({preventScroll:true});inp.select();}
+  return;}
+ const n=ev.target.closest('[data-node]');if(n){node=n.dataset.node;render();}
+});
+$('rs').addEventListener('click',()=>{S={...DEF};comps.forEach(c=>c.v=c.t==='sw'?c.opts[0]:0);selT=null;selId=null;node='aus';render();});
+// ---- Code kopieren / einfügen ----
+const KEYS=['uhf','vhf','tx','vd','md'],RNG=[[0,130],[0,130],[0,130],[4,20],[8,20]];
+function enc(){
+ const o={v:1,s:KEYS.map(k=>S[k]),c:comps.map(c=>c.v)};
+ return 'ORI1-'+btoa(JSON.stringify(o)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function dec(t){
+ t=t.trim().replace(/\s+/g,'');if(t.indexOf('ORI1-')!==0)throw new Error('format');
+ let b=t.slice(5).replace(/-/g,'+').replace(/_/g,'/');while(b.length%4)b+='=';
+ const o=JSON.parse(atob(b));
+ if(!Array.isArray(o.s)||o.s.length<KEYS.length||!Array.isArray(o.c)||o.c.length!==comps.length)throw new Error('data');
+ o.s.forEach(x=>{if(typeof x!=='number'||!isFinite(x))throw new Error('data');});
+ o.c.forEach(x=>{if(typeof x!=='number'||!isFinite(x))throw new Error('data');});
+ KEYS.forEach((k,i)=>S[k]=Math.min(RNG[i][1],Math.max(RNG[i][0],o.s[i])));
+ comps.forEach((c,i)=>{const x=o.c[i];c.v=c.t==='sw'?(c.opts.includes(x)?x:c.opts[0]):Math.min(c.max,Math.max(0,x));});
+}
+function msg(t,ok){const m=$('msg');m.textContent=t;m.style.color=ok?'var(--green)':'var(--red)';}
+const CK='<svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>';
+$('cp').addEventListener('click',async()=>{
+ const code=enc(),b=$('cp');let ok=false;
+ try{await navigator.clipboard.writeText(code);ok=true;}catch(e){
+  const ta=document.createElement('textarea');ta.value=code;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();
+  try{ok=document.execCommand('copy');}catch(e2){}ta.remove();}
+ if(!ok){$('impbox').hidden=false;$('code').value=code;$('code').select();msg('Bitte Code manuell kopieren',false);return;}
+ const o=b.innerHTML;b.innerHTML=CK;setTimeout(()=>b.innerHTML=o,1600);
+});
+$('imp').addEventListener('click',()=>{const b=$('impbox');b.hidden=!b.hidden;msg('',true);if(!b.hidden)$('code').focus();});
+$('load').addEventListener('click',()=>{
+ try{dec($('code').value);selT=null;selId=null;node='aus';render();msg('Geladen ✓',true);setTimeout(()=>{$('impbox').hidden=true;$('code').value='';},700);}
+ catch(e){msg('Code ungültig',false);}
+});
+// ---- Hell / Dunkel ----
+const root=document.documentElement;
+function setTheme(t){root.dataset.theme=t;try{localStorage.setItem('ori-theme',t);}catch(e){}}
+let t0='dark';try{t0=localStorage.getItem('ori-theme')||'dark';}catch(e){}
+setTheme(t0==='light'?'light':'dark');
+$('th').addEventListener('click',()=>setTheme(root.dataset.theme==='dark'?'light':'dark'));
+render();
+</script></body></html>
